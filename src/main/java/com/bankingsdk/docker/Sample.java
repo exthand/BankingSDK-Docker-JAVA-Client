@@ -31,7 +31,7 @@ public class Sample {
         // could be modified by the API. So you have to check in response if not null => has changed => save it for later
         String userContext;
         // YOUR unique id of the PSU user in YOUR app
-        String userId = "ABC123";
+        String userId = "ABC1234";
 
         /*
         COMMON SETTINGS
