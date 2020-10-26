@@ -34,11 +34,17 @@ public class Sample {
         System.out.println("Docker sample started");
         // String dockerBase = "https://bankingsdk-docker-test.azurewebsites.net";
         String dockerBase = "https://localhost:5001";
-        // user context is linked to your user and a bank, but holds several consent for several accounts. It must be stored and pass through to the API as it is
-        // could be modified by the API. So you have to check in response if not null => has changed => save it for later
+        // user context is linked to your user and a bank, but holds several consent for several accounts. It must be stored
+        // and pass through to the API as it is could be modified by the API. So you have to check in response if not
+        // null => has changed => save it for later
         String userContext;
         // YOUR unique id of the PSU user in YOUR app
         String userId = "ABC1234";
+        // this is the URL the bank will redirect to after the Strong Customer Authentication has been done successfully
+        // or not. An end-to-end id (flow id, see later) given to the bank will be given back by the bank for flow
+        // continuity. There is an end point to extract this flow id, see call for getting back the flow id after.
+        // This callback URL, for many banks, is checked against the list of valid callback URL you provide when you onboard in the bank
+        String scaCallBackUrl = "https://developer.bankingsdk.com/callback";
 
         // Preparing the list of accounts or single account that will maybe be needed to be given to the bank connector
         // this depends on the bank. See documentation bank account option and here further bank account option call
@@ -141,7 +147,7 @@ public class Sample {
                     .setAccountsAccessRequest(new AccountAccessInnerRequest()
                             .setFlowId(flowId.toString())
                             .setFrequencyPerDay(4)
-                            .setRedirectUrl("https://developer.bankingsdk.com/callback")
+                            .setRedirectUrl(scaCallBackUrl)
                             .setPsuIp("10.0.0.2")
                             .setSingleAccount(singleAccountToRequest)
                             .setBalanceAccounts(accountsToRequestForBalance)
