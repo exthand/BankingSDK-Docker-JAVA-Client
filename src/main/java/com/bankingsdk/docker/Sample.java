@@ -357,6 +357,7 @@ public class Sample {
             Delete linked account
              */
             if (accountsList.getAccounts().size() > 0) {
+                System.out.println("User context before account deletion : " + userContext);
                 // Let's remove the first one
                 String accountIdToDelete = accountsList.getAccounts().get(0).getId();
                 DeleteAccountRequest deleteAccountRequest = new DeleteAccountRequest()
@@ -380,6 +381,7 @@ public class Sample {
                 }
                 // update the userContext which could have been modified
                 userContext = httpRequest.getResponsePayloadAsString();
+                System.out.println("User context after account deletion : " + userContext);
             }
 
 
