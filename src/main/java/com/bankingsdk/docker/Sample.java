@@ -70,14 +70,6 @@ public class Sample {
                 .setSigningCertificatePassword("bankingsdk")
                 .setTlsCertificateName("eidas_tls.pfx") // tls aka qwac certificate
                 .setTlsCertificatePassword("bankingsdk");
-        /*
-        BNP and it's settings
-         */
-        // int connectorId = 2;
-        // bank specific settings
-        // bankSettings
-        //         .setAppClientId("c2b8a2da-2a04-446c-a810-165373564334")
-        //         .setAppClientSecret("c9ebf4292aec99d26150d8124e84db57661e6a596cbed9e9952173750940d4b194c5615b6d3b8a0e3ea355c438e06bcb");
 
        /*
         BE ING
