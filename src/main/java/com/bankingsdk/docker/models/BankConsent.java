@@ -6,7 +6,6 @@ import java.util.Calendar;
 
 public class BankConsent {
     private String consentId;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX")
     private Calendar validUntil;
 
     public String getConsentId() {
@@ -21,7 +20,6 @@ public class BankConsent {
         return validUntil;
     }
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX")
     public void setValidUntil(Calendar validUntil) {
         this.validUntil = validUntil;
     }

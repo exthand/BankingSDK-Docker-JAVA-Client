@@ -32,8 +32,8 @@ public class Sample {
          */
 
         System.out.println("Docker sample started");
-        // String dockerBase = "https://bankingsdk-docker-test.azurewebsites.net";
-        String dockerBase = "https://localhost:5001";
+        String dockerBase = "https://bankingsdk-docker-test.azurewebsites.net";
+
         // user context is linked to your user and a bank, but holds several consent for several accounts. It must be stored
         // and pass through to the API as it is could be modified by the API. So you have to check in response if not
         // null => has changed => save it for later
