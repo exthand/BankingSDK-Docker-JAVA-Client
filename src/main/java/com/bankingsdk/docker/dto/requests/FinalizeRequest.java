@@ -1,6 +1,6 @@
 package com.bankingsdk.docker.dto.requests;
 
-public class AccountAccessFinalizeRequest {
+public class FinalizeRequest {
     private String flow = "";
     private String queryString = "";
     private String userContext = "";
@@ -10,7 +10,7 @@ public class AccountAccessFinalizeRequest {
         return flow;
     }
 
-    public AccountAccessFinalizeRequest setFlow(String flow) {
+    public FinalizeRequest setFlow(String flow) {
         this.flow = flow;
         return this;
     }
@@ -19,7 +19,7 @@ public class AccountAccessFinalizeRequest {
         return queryString;
     }
 
-    public AccountAccessFinalizeRequest setQueryString(String queryString) {
+    public FinalizeRequest setQueryString(String queryString) {
         this.queryString = queryString;
         return this;
     }
@@ -28,7 +28,7 @@ public class AccountAccessFinalizeRequest {
         return userContext;
     }
 
-    public AccountAccessFinalizeRequest setUserContext(String userContext) {
+    public FinalizeRequest setUserContext(String userContext) {
         this.userContext = userContext;
         return this;
     }
@@ -37,7 +37,7 @@ public class AccountAccessFinalizeRequest {
         return bankSettings;
     }
 
-    public AccountAccessFinalizeRequest setBankSettings(BankSettingsRequest bankSettings) {
+    public FinalizeRequest setBankSettings(BankSettingsRequest bankSettings) {
         this.bankSettings = bankSettings;
         return this;
     }

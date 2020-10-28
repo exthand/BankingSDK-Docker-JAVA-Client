@@ -6,7 +6,7 @@ import com.bankingsdk.docker.exceptions.ApiCallException;
 import com.bankingsdk.docker.exceptions.IdentificationException;
 import com.bankingsdk.docker.helper.BankingHttpService;
 import com.bankingsdk.docker.models.BankAccount;
-import com.bankingsdk.docker.models.BankConnectorOptions;
+import com.bankingsdk.docker.models.RequestAccountsAccessOption;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 public class Sample {
@@ -33,7 +34,7 @@ public class Sample {
 
         System.out.println("Docker sample started");
         String dockerBase = "https://bankingsdk-docker-test.azurewebsites.net";
-
+        dockerBase = "https://localhost:5001";
         // user context is linked to your user and a bank, but holds several consent for several accounts. It must be stored
         // and pass through to the API as it is could be modified by the API. So you have to check in response if not
         // null => has changed => save it for later
@@ -52,7 +53,7 @@ public class Sample {
         // or ask nothing, the accounts wil be selected during the bank SCA flow
         // for some banks, you may request only balance access, only transactions access or both.
         // if a bank don't allows separated access request, balance and transaction accounts will be merged before requesting them
-        BankConnectorOptions connectorOption = BankConnectorOptions.UNKNOWN;
+        RequestAccountsAccessOption connectorOption = null;
         List<String> accountsToRequestForBalance = null;
         List<String> accountsToRequestForTransaction = null;
         String singleAccountToRequest = null;
@@ -70,6 +71,14 @@ public class Sample {
                 .setSigningCertificatePassword("bankingsdk")
                 .setTlsCertificateName("eidas_tls.pfx") // tls aka qwac certificate
                 .setTlsCertificatePassword("bankingsdk");
+        /*
+        BNP and it's settings
+         */
+        // int connectorId = 2;
+        // bank specific settings
+        // bankSettings
+        //         .setAppClientId("d43ec737-e831-43a2-906b-5620d75e879d") //test3
+        //         .setAppClientSecret("a498103dcd8471b63f901263703a295139d43a13555a3d373f0e8415d6401b1d0235468cf4db1e1d0b9680970fb688ac");
 
        /*
         BE ING
@@ -87,11 +96,13 @@ public class Sample {
             // in SCA redirection that it will transmitted back when it redirects to you to allow you to restore the
             // flow
             UUID flowId = UUID.randomUUID();
+            // This variable will contain the flow (jsonified)
+            String flow;
             AccountsResponse accountsList;
 
             /*
               BANK ACCOUNT OPTION == how does the bank accepts the accounts to be linked ?
-              Not use in this example
+              Not use in this example but your I/F should take care of this to prompt the right type of field to the user
              */
             BankingHttpService httpRequest = new BankingHttpService();
             httpStatus = httpRequest
@@ -106,8 +117,8 @@ public class Sample {
             }
             // Yes, user context is a string. Its structure depends on the connector ! Just save and provide it
             ConnectorOptionResponse connectorOptionResponse = getJsonDeserializer().readValue(httpRequest.getResponsePayloadAsString(), ConnectorOptionResponse.class);
-            connectorOption = BankConnectorOptions.fromOrdinal(connectorOptionResponse.getOption());
-            System.out.println(String.format("Connector %d, option %s", connectorId, connectorOption.toString()));
+            connectorOption = RequestAccountsAccessOption.fromOrdinal(connectorOptionResponse.getOption());
+            System.out.printf("Connector %d, option %s%n", connectorId, connectorOption.toString());
 
             /*
               USER REGISTRATION
@@ -141,6 +152,8 @@ public class Sample {
                             .setFrequencyPerDay(4)
                             .setRedirectUrl(scaCallBackUrl)
                             .setPsuIp("10.0.0.2")
+                            // next three can be set, the connector only take into account what he needs
+                            // no need to switch here on connector option
                             .setSingleAccount(singleAccountToRequest)
                             .setBalanceAccounts(accountsToRequestForBalance)
                             .setTransactionAccounts(accountsToRequestForTransaction)
@@ -160,11 +173,12 @@ public class Sample {
             }
             content = httpRequest.getResponsePayloadAsString();
             AccountAccessResponse accountAccessResponse = getJsonDeserializer().readValue(content, AccountAccessResponse.class);
-            // here you should save the flow context with the flowid defined above
+            // here you should save the flow context with the flow id defined above
+            flow = accountAccessResponse.getFlowContext();
 
             /*
               SCA REDIRECTION
-              This must be handled by your
+              This must be handled by your app
              */
             System.out.println("We've got a SCA redirection URL : " + accountAccessResponse.getRedirectUrl());
             System.out.print("Open it ? [Y/n]");
@@ -197,12 +211,14 @@ public class Sample {
             // get and save the user context which have certainly been modified
             flowId = UUID.fromString(httpRequest.getResponsePayloadAsString());
             // With this flowid you should be able the retrieve the flow context string from your database
+            // Here we use the flow we receive from previous call
+            flow = accountAccessResponse.getFlowContext();
 
             /*
               Finalizing the BankAccount Access Request
              */
-            AccountAccessFinalizeRequest accountAccessFinalizeRequest = new AccountAccessFinalizeRequest()
-                    .setFlow(accountAccessResponse.getFlowContext())
+            FinalizeRequest accountAccessFinalizeRequest = new FinalizeRequest()
+                    .setFlow(flow)
                     .setQueryString(querystring)
                     .setUserContext(userContext)
                     .setBankSettings(bankSettings);
@@ -352,6 +368,124 @@ public class Sample {
             }
 
             /*
+            Payment Initiation Request
+            In sandbox mode, don't expect the transaction to correspond to the data you gave, bank's sandbox often
+            request the payment data to be fixed data... :'(
+            Each PI requires a SCA by the PSU even if you have a consent for AIS.
+             */
+            if (accountsList.getAccounts().size() > 0) {
+                BankAccount debtorAccount = accountsList.getAccounts().get(0);
+                System.out.println("Initiating payment");
+                PaymentRequest paymentRequest = new PaymentRequest()
+                        .setConnectorId(connectorId)
+                        .setBankSettings(bankSettings)
+                        .setUserContext(userContext)
+                        .setPaymentInitiationRequest(new PaymentInitiationRequest()
+                                .setRecipient(new PaymentRecipient()
+                                        .setName("Other Business ltd")
+                                        .setIban("AT861921125678901234")
+                                )
+                                .setDebtor(new PaymentDebtor()
+                                        .setName(debtorAccount.getDescription())
+                                        .setIban(debtorAccount.getIban())
+                                        .setCurrency(debtorAccount.getCurrency())
+                                )
+                                .setPsuIp("10.0.0.1")
+                                .setRedirectUrl(scaCallBackUrl)
+                                .setEndToEndId(UUID.randomUUID().toString().replaceAll("-", ""))
+                                .setRequestedExecutionDate(Calendar.getInstance())
+                                .setAmount(getRandomPaymentAmountInCent(50, 199))
+                                .setCurrency("EUR")
+                                .setFlowId(flowId.toString())
+                                .setRemittanceInformationUnstructured("Test BankingSDK Docker payment")
+                        );
+                payload = getJsonSerializer().writeValueAsString(paymentRequest);
+                httpRequest = new BankingHttpService();
+                httpStatus = httpRequest
+                        .setUri(dockerBase + "/Pis/payment")
+                        .setPayload(payload)
+                        .post()
+                        .getRequestStatus();
+                if (httpStatus == 401 || httpStatus == 403) {
+                    throw new IdentificationException(String.format("Security exception payment from account=%s. HTTP status=%d, Server response=%s", debtorAccount.getIban(), httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                if (httpStatus < 200 || httpStatus > 299) {
+                    throw new ApiCallException(String.format("Execution exception payment from account=%s. HTTP status=%d, Server response=%s", debtorAccount.getIban(), httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                // update the userContext which could have been modified
+                content = httpRequest.getResponsePayloadAsString();
+                PaymentInitiationResponse paymentInitiationResponse = getJsonDeserializer().readValue(content, PaymentInitiationResponse.class);
+                if (paymentInitiationResponse.getUserContext() != null) {
+                    // not null means has changed, so you should save it for later reuse
+                    userContext = paymentInitiationResponse.getUserContext();
+                }
+                // here you should save the flow context with the flowid defined above
+                flow = paymentInitiationResponse.getFlowContext();
+
+                System.out.println("Payment Initiation requested !");
+
+                /*
+                  SCA REDIRECTION
+                  This must be handled by your app
+                 */
+                System.out.println("We've got a SCA redirection URL : " + paymentInitiationResponse.getRedirectUrl());
+                System.out.print("Open it ? [Y/n]");
+                reader =
+                        new BufferedReader(new InputStreamReader(System.in));
+                openUrl = reader.readLine();
+                if (!openUrl.toUpperCase().equals("N")) {
+                    openUrl(accountAccessResponse.getRedirectUrl());
+                }
+                System.out.println("");
+                System.out.print("Paste the querystring where the bank redirects you:");
+                reader = new BufferedReader(new InputStreamReader(System.in));
+                querystring = reader.readLine();
+
+                /*
+                Getting back the flowid from the queryString received from the bank
+                 */
+                httpStatus = httpRequest
+                        .setUri(dockerBase + "/Ais/access/findFlowId?queryString=" + URLEncoder.encode(querystring, StandardCharsets.UTF_8.toString()))
+                        .addHeader(HttpHeaders.ACCEPT, "text/plain") // MANDATORY, not application/json !!!
+                        .get()
+                        .getRequestStatus();
+                if (httpStatus == 401 || httpStatus == 403) {
+                    throw new IdentificationException(String.format("Security exception extracting flow id from query string. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                if (httpStatus < 200 || httpStatus > 299) {
+                    throw new ApiCallException(String.format("Execution exception extracting flow id from query string. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                // get and save the user context which have certainly been modified
+                flowId = UUID.fromString(httpRequest.getResponsePayloadAsString());
+                // With this flowid you should be able the retrieve the flow context string from your database
+                // Here we use the flow we recieve from previous call
+                flow = paymentInitiationResponse.getFlowContext();
+
+                /*
+                Finalizing the payment
+                 */
+                System.out.println("Finalizing the payment");
+                FinalizeRequest paymentFinalyseRequest = new FinalizeRequest()
+                        .setFlow(flow)
+                        .setQueryString(querystring)
+                        .setUserContext(userContext)
+                        .setBankSettings(bankSettings);
+                payload = getJsonSerializer().writeValueAsString(paymentFinalyseRequest);
+                httpStatus = httpRequest
+                        .setUri(dockerBase + "/Pis/payment/finalize")
+                        .setPayload(payload)
+                        .post()
+                        .getRequestStatus();
+                if (httpStatus == 401 || httpStatus == 403) {
+                    throw new IdentificationException(String.format("Security exception finalizing payment. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                if (httpStatus < 200 || httpStatus > 299) {
+                    throw new ApiCallException(String.format("Execution exception finalizing payment. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                content = httpRequest.getResponsePayloadAsString();
+            }
+
+            /*
             Delete linked account
              */
             if (accountsList.getAccounts().size() > 0) {
@@ -382,13 +516,16 @@ public class Sample {
                 System.out.println("User context after account deletion : " + userContext);
             }
 
-
             int stupidDebugStop = 10;
 
         } catch (ApiCallException | IdentificationException | IOException | UnsupportedOperationException e) {
             e.printStackTrace();
         }
 
+    }
+
+    private static double getRandomPaymentAmountInCent(int min, int max) {
+        return ((double) new Random().nextInt(199 - 50 + 1) + 50) / 100.0;
     }
 
     private static ObjectMapper getJsonDeserializer() {
