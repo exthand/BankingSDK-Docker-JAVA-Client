@@ -199,7 +199,6 @@ public class Sample {
             httpStatus = httpRequest
                     .setUri(dockerBase + "/Ais/access/findFlowId?queryString=" + URLEncoder.encode(querystring, StandardCharsets.UTF_8.toString()))
                     .addHeader(HttpHeaders.ACCEPT, "text/plain") // MANDATORY, not application/json !!!
-                    .setPayload(payload)
                     .get()
                     .getRequestStatus();
             if (httpStatus == 401 || httpStatus == 403) {
@@ -294,7 +293,7 @@ public class Sample {
                 // How lazy I can be :)
                 System.out.println(getJsonSerializer().writeValueAsString(balanceResponse));
                 // get and save the user context which may have been modified
-                if (accountsList.getUserContext() != null) {
+                if (balanceResponse.getUserContext() != null) {
                     // not null means has changed, so you should save it for later reuse
                     userContext = balanceResponse.getUserContext();
                 }
