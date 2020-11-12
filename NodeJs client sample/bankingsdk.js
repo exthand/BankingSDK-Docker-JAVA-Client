@@ -71,7 +71,7 @@ if (connectorId == 2) {
     innerAcountsAccessRequestBody.transactionAccounts = null
     innerAcountsAccessRequestBody.balanceAccounts = null
 
-    const accountsAccessRequestBody = { userContext, connectorId, bankSettings, innerAcountsAccessRequestBody };
+    const accountsAccessRequestBody = { userContext, connectorId, bankSettings, accountsAccessRequest: innerAcountsAccessRequestBody };
 
 	const accountAccessRequestResponse = await fetch(baseUrl + "/Ais/access", {
 		method: 'post',
@@ -211,7 +211,8 @@ if (connectorId == 2) {
         }
 
         let pagerContext = transactionsFirstResponseBody.pagerContext;
-        while (pagerContext && !pagerContext.isLastPage) {
+        let isLastPage = transactionsFirstResponseBody.isLastPage
+        while (!isLastPage) {
 
             const  transactionsRequestBody = {
                 connectorId,
@@ -235,7 +236,7 @@ if (connectorId == 2) {
                 userContext = transactionsResponseBody.userContext;
             }
             // save the page context for next iteration if any
-            pagerContext = transactionsResponseBody.pagerContext;
+            isLastPage = transactionsResponseBody.isLastPage;
         }
     }
 
