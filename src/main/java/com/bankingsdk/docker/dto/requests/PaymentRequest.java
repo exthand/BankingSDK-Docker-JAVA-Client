@@ -5,6 +5,7 @@ public class PaymentRequest {
     private int connectorId = 0;
     private BankSettingsRequest bankSettings;
     private String userContext;
+    private TppContext tppContext;
 
     public int getConnectorId() {
         return connectorId;
@@ -39,6 +40,15 @@ public class PaymentRequest {
 
     public PaymentRequest setPaymentInitiationRequest(PaymentInitiationRequest paymentInitiationRequest) {
         this.paymentInitiationRequest = paymentInitiationRequest;
+        return this;
+    }
+
+    public TppContext getTppContext() {
+        return tppContext;
+    }
+
+    public PaymentRequest setTppContext(TppContext tppContext) {
+        this.tppContext = tppContext;
         return this;
     }
 }

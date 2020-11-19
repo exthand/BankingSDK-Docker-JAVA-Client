@@ -58,6 +58,21 @@ public class Sample {
         List<String> accountsToRequestForTransaction = null;
         String singleAccountToRequest = null;
 
+        // Your data about the context of the current execution. They will be saved in the BankingSDK Developer Portal log for your own usage.
+        // When looking at the calls in dev portal, you will be able to identify where the call has been done in your app, in which context,
+        // for who, group related calls sequence...
+        // Those are completely optional.
+        // There are no structure but we can imagine App > Unit > TppId > Flow > Transaction
+        // App : the name of your app
+        // Unit : The part of the app, API, Web...
+        // Flow : Identification of the flow
+        // Transaction : identification of the transaction
+        // You fill the field you want with the value you want.
+        // Example, preparing the base we will use all along this on thread run
+        TppContext tppContext = new TppContext()
+                .setApp("JAVA SAMPLE v1.0.0")
+                .setUnit("CONSOLE")
+                .setTppId("CURRENT USER ID");
 
         /*
         COMMON SETTINGS
@@ -143,6 +158,8 @@ public class Sample {
             /*
               ACCOUNT ACCESS REQUEST
              */
+            tppContext.setFlow("Request Account Acc...")
+                    .setTransaction(flowId.toString());
             AccountAccessRequest accountAccessRequest = new AccountAccessRequest()
                     .setConnectorId(connectorId)
                     .setUserContext(userContext)
@@ -157,7 +174,8 @@ public class Sample {
                             .setSingleAccount(singleAccountToRequest)
                             .setBalanceAccounts(accountsToRequestForBalance)
                             .setTransactionAccounts(accountsToRequestForTransaction)
-                    );
+                    )
+                    .setTppContext(tppContext);
             payload = getJsonSerializer().writeValueAsString(accountAccessRequest);
             httpRequest = new BankingHttpService();
             httpStatus = httpRequest
@@ -216,11 +234,14 @@ public class Sample {
             /*
               Finalizing the BankAccount Access Request
              */
+            tppContext.setFlow("finalize Request Access...")
+                    .setTransaction(flowId.toString());
             FinalizeRequest accountAccessFinalizeRequest = new FinalizeRequest()
                     .setFlow(flow)
                     .setQueryString(querystring)
                     .setUserContext(userContext)
-                    .setBankSettings(bankSettings);
+                    .setBankSettings(bankSettings)
+                    .setTppContext(tppContext);
             payload = getJsonSerializer().writeValueAsString(accountAccessFinalizeRequest);
             httpRequest = new BankingHttpService();
             httpStatus = httpRequest
@@ -241,10 +262,13 @@ public class Sample {
             /*
               Getting Accounts
              */
+            tppContext.setFlow("getting accounts")
+                    .setTransaction(null);
             SimpleRequest simpleRequest = new SimpleRequest()
                     .setConnectorId(connectorId)
                     .setUserContext(userContext)
-                    .setBankSettings(bankSettings);
+                    .setBankSettings(bankSettings)
+                    .setTppContext(tppContext);
             payload = getJsonSerializer().writeValueAsString(simpleRequest);
             httpRequest = new BankingHttpService();
             httpStatus = httpRequest
@@ -269,12 +293,15 @@ public class Sample {
             /*
               Getting Balances
              */
+            tppContext.setFlow("getting balance"); // sound stupid but for some banks, getting the balance is done by getting the account list... :)
             for (BankAccount account : accountsList.getAccounts()) {
+                tppContext.setTransaction(account.getId() + ":" + account.getIban());
                 // intentionally duplicated code for simplicity
                 simpleRequest = new SimpleRequest()
                         .setConnectorId(connectorId)
                         .setUserContext(userContext)
-                        .setBankSettings(bankSettings);
+                        .setBankSettings(bankSettings)
+                        .setTppContext(tppContext);
                 payload = getJsonSerializer().writeValueAsString(simpleRequest);
                 httpRequest = new BankingHttpService();
                 httpStatus = httpRequest
@@ -302,13 +329,16 @@ public class Sample {
             /*
               Getting Transactions
              */
+            tppContext.setFlow("getting transactions");
             for (BankAccount account : accountsList.getAccounts()) {
+                tppContext.setTransaction(account.getId() + ":" + account.getIban());
                 // intentionally duplicated code for simplicity
                 TransactionsFirstRequest transactionsFirstRequest = new TransactionsFirstRequest()
                         .setLimit(1)
                         .setConnectorId(connectorId)
                         .setUserContext(userContext)
-                        .setBankSettings(bankSettings);
+                        .setBankSettings(bankSettings)
+                        .setTppContext(tppContext);
                 payload = getJsonSerializer().writeValueAsString(simpleRequest);
                 httpRequest = new BankingHttpService();
                 httpStatus = httpRequest
@@ -338,7 +368,8 @@ public class Sample {
                             .setConnectorId(connectorId)
                             .setUserContext(userContext)
                             .setBankSettings(bankSettings)
-                            .setPagerContext(pagerContext);
+                            .setPagerContext(pagerContext)
+                            .setTppContext(tppContext);
                     payload = getJsonSerializer().writeValueAsString(simpleRequest);
                     httpRequest = new BankingHttpService();
                     httpStatus = httpRequest
@@ -375,6 +406,8 @@ public class Sample {
             if (accountsList.getAccounts().size() > 0) {
                 BankAccount debtorAccount = accountsList.getAccounts().get(0);
                 System.out.println("Initiating payment");
+                tppContext.setFlow("payment:" + flowId.toString())
+                        .setTransaction(debtorAccount.getId() + ":" + debtorAccount.getIban());
                 PaymentRequest paymentRequest = new PaymentRequest()
                         .setConnectorId(connectorId)
                         .setBankSettings(bankSettings)
@@ -397,7 +430,8 @@ public class Sample {
                                 .setCurrency("EUR")
                                 .setFlowId(flowId.toString())
                                 .setRemittanceInformationUnstructured("Test BankingSDK Docker payment")
-                        );
+                        )
+                        .setTppContext(tppContext);
                 payload = getJsonSerializer().writeValueAsString(paymentRequest);
                 httpRequest = new BankingHttpService();
                 httpStatus = httpRequest
@@ -468,7 +502,8 @@ public class Sample {
                         .setFlow(flow)
                         .setQueryString(querystring)
                         .setUserContext(userContext)
-                        .setBankSettings(bankSettings);
+                        .setBankSettings(bankSettings)
+                        .setTppContext(tppContext);
                 payload = getJsonSerializer().writeValueAsString(paymentFinalyseRequest);
                 httpStatus = httpRequest
                         .setUri(dockerBase + "/Pis/payment/finalize")
@@ -490,12 +525,15 @@ public class Sample {
             if (accountsList.getAccounts().size() > 0) {
                 System.out.println("User context before account deletion : " + userContext);
                 // Let's remove the first one
-                String accountIdToDelete = accountsList.getAccounts().get(0).getId();
+                BankAccount accountToDelete = accountsList.getAccounts().get(0);
+                tppContext.setFlow("Delete:" + flowId.toString())
+                        .setTransaction(accountToDelete.getId() + ":" + accountToDelete.getIban());
                 DeleteAccountRequest deleteAccountRequest = new DeleteAccountRequest()
-                        .setId(accountIdToDelete)
+                        .setId(accountToDelete.getId())
                         .setConnectorId(connectorId)
                         .setUserContext(userContext)
-                        .setBankSettings(bankSettings);
+                        .setBankSettings(bankSettings)
+                        .setTppContext(tppContext);
                 payload = getJsonSerializer().writeValueAsString(deleteAccountRequest);
                 httpRequest = new BankingHttpService();
                 httpStatus = httpRequest
@@ -505,10 +543,10 @@ public class Sample {
                         .post()
                         .getRequestStatus();
                 if (httpStatus == 401 || httpStatus == 403) {
-                    throw new IdentificationException(String.format("Security exception deleting account id=%s. HTTP status=%d, Server response=%s", accountIdToDelete, httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                    throw new IdentificationException(String.format("Security exception deleting account id=%s. HTTP status=%d, Server response=%s", accountToDelete, httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
                 }
                 if (httpStatus < 200 || httpStatus > 299) {
-                    throw new ApiCallException(String.format("Execution exception deleting account id=%s. HTTP status=%d, Server response=%s", accountIdToDelete, httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                    throw new ApiCallException(String.format("Execution exception deleting account id=%s. HTTP status=%d, Server response=%s", accountToDelete, httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
                 }
                 // update the userContext which could have been modified
                 userContext = httpRequest.getResponsePayloadAsString();

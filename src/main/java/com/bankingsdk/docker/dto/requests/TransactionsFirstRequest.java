@@ -32,4 +32,16 @@ public class TransactionsFirstRequest extends SimpleRequest {
 
         return this;
     }
+
+    @Override
+    public TppContext getTppContext() {
+        return super.getTppContext();
+    }
+
+    @Override
+    public TransactionsFirstRequest setTppContext(TppContext tppContext) {
+        super.setTppContext(tppContext);
+
+        return this;
+    }
 }

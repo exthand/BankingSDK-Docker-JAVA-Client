@@ -47,4 +47,16 @@ public class DeleteAccountRequest extends SimpleRequest {
 
         return this;
     }
+
+    @Override
+    public TppContext getTppContext() {
+        return super.getTppContext();
+    }
+
+    @Override
+    public DeleteAccountRequest setTppContext(TppContext tppContext) {
+        super.setTppContext(tppContext);
+
+        return this;
+    }
 }

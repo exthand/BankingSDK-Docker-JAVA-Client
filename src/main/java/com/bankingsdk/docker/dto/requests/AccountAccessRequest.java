@@ -5,6 +5,7 @@ public class AccountAccessRequest {
     private String userContext = "";
     private BankSettingsRequest bankSettings;
     private AccountAccessInnerRequest accountsAccessRequest;
+    private TppContext tppContext;
 
     public int getConnectorId() {
         return connectorId;
@@ -39,6 +40,15 @@ public class AccountAccessRequest {
 
     public AccountAccessRequest setAccountsAccessRequest(AccountAccessInnerRequest accountsAccessRequest) {
         this.accountsAccessRequest = accountsAccessRequest;
+        return this;
+    }
+
+    public TppContext getTppContext() {
+        return tppContext;
+    }
+
+    public AccountAccessRequest setTppContext(TppContext tppContext) {
+        this.tppContext = tppContext;
         return this;
     }
 }

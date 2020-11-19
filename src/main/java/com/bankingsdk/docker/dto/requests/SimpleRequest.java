@@ -4,6 +4,7 @@ public class SimpleRequest {
     private int connectorId = 0;
     private String userContext = "";
     private BankSettingsRequest bankSettings;
+    private TppContext tppContext;
 
     public int getConnectorId() {
         return connectorId;
@@ -29,6 +30,15 @@ public class SimpleRequest {
 
     public SimpleRequest setBankSettings(BankSettingsRequest bankSettings) {
         this.bankSettings = bankSettings;
+        return this;
+    }
+
+    public TppContext getTppContext() {
+        return tppContext;
+    }
+
+    public SimpleRequest setTppContext(TppContext tppContext) {
+        this.tppContext = tppContext;
         return this;
     }
 }

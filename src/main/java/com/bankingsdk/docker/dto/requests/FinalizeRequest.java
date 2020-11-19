@@ -5,6 +5,7 @@ public class FinalizeRequest {
     private String queryString = "";
     private String userContext = "";
     BankSettingsRequest bankSettings;
+    private TppContext tppContext;
 
     public String getFlow() {
         return flow;
@@ -39,6 +40,15 @@ public class FinalizeRequest {
 
     public FinalizeRequest setBankSettings(BankSettingsRequest bankSettings) {
         this.bankSettings = bankSettings;
+        return this;
+    }
+
+    public TppContext getTppContext() {
+        return tppContext;
+    }
+
+    public FinalizeRequest setTppContext(TppContext tppContext) {
+        this.tppContext = tppContext;
         return this;
     }
 }
