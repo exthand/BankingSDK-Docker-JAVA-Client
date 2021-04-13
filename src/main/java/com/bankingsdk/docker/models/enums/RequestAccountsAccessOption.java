@@ -1,9 +1,12 @@
-package com.bankingsdk.docker.models;
+package com.bankingsdk.docker.models.enums;
+
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum RequestAccountsAccessOption {
-    MULTIPLE_ACCOUNTS,
-    NO_ACCOUNTS,
-    SINGLE_ACCOUNT;
+    CUSTOMIZABLE,
+    NOT_CUSTOMIZABLE,
+    SINGLE_ACCOUNT,
+    DETAILED;
 
     public static RequestAccountsAccessOption fromOrdinal(int n) {
         if ((n < 0) || (n > (values().length-1))) {
@@ -11,5 +14,10 @@ public enum RequestAccountsAccessOption {
         }
 
         return values()[n];
+    }
+
+    @JsonValue
+    public int toValue() {
+        return ordinal();
     }
 }

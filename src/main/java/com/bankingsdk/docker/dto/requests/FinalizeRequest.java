@@ -2,7 +2,7 @@ package com.bankingsdk.docker.dto.requests;
 
 public class FinalizeRequest {
     private String flow = "";
-    private String queryString = "";
+    private String dataString = "";
     private String userContext = "";
     BankSettingsRequest bankSettings;
     private TppContext tppContext;
@@ -16,12 +16,12 @@ public class FinalizeRequest {
         return this;
     }
 
-    public String getQueryString() {
-        return queryString;
+    public String getDataString() {
+        return dataString;
     }
 
-    public FinalizeRequest setQueryString(String queryString) {
-        this.queryString = queryString;
+    public FinalizeRequest setDataString(String dataString) {
+        this.dataString = dataString;
         return this;
     }
 

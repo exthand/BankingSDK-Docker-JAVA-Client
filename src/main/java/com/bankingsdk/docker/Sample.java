@@ -6,7 +6,12 @@ import com.bankingsdk.docker.exceptions.ApiCallException;
 import com.bankingsdk.docker.exceptions.IdentificationException;
 import com.bankingsdk.docker.helper.BankingHttpService;
 import com.bankingsdk.docker.models.BankAccount;
-import com.bankingsdk.docker.models.RequestAccountsAccessOption;
+import com.bankingsdk.docker.models.PaymentRequestOptions;
+import com.bankingsdk.docker.models.RequestAccountsOptions;
+import com.bankingsdk.docker.models.enums.PaymentRequestDebtorIbanOption;
+import com.bankingsdk.docker.models.enums.RequestAccountsAccessOption;
+import com.bankingsdk.docker.models.enums.RequestAccountsCurrencyOption;
+import com.bankingsdk.docker.models.enums.RequestAccountsLinkingOption;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -34,6 +39,7 @@ public class Sample {
 
         System.out.println("Docker sample started");
         String dockerBase = "https://bankingsdk-docker-test.azurewebsites.net";
+        dockerBase = "https://localhost:5001";
 
         // user context is linked to your user and a bank, but holds several consent for several accounts. It must be stored
         // and pass through to the API as it is could be modified by the API. So you have to check in response if not
@@ -47,13 +53,28 @@ public class Sample {
         // This callback URL, for many banks, is checked against the list of valid callback URL you provide when you onboard in the bank
         String scaCallBackUrl = "https://developer.bankingsdk.com/callback";
 
+        // RequestAccountsOptions
+        // This helps you to adapt your UI depending on the bank options
+
+        // RequestAccountsOptions.accessOption:
         // Preparing the list of accounts or single account that will maybe be needed to be given to the bank connector
         // this depends on the bank. See documentation bank account option and here further bank account option call
         // depending on that option, you will need to ask the user to enter a single account IBAN, multiple account IBANs
         // or ask nothing, the accounts wil be selected during the bank SCA flow
         // for some banks, you may request only balance access, only transactions access or both.
         // if a bank don't allows separated access request, balance and transaction accounts will be merged before requesting them
-        RequestAccountsAccessOption connectorOption = null;
+
+        // RequestAccountsOptions.currencyOption:
+        // Some bank requires you to provide the currency when requesting account, some don't allow and some don't care :). with this flag, you can adapt the UI or set it fixed in your code
+
+        // RequestAccountsOptions.linkingOption:
+        // Some banks accept to have multiple consent for the same user, some don't. This later means that, to get consent
+        // for more bank accounts of the same user, you will need to ask the consent for all already connected account plus new ones
+        RequestAccountsOptions connectorAccountOptions = null;
+
+        // PaymentRequestOptions: contains the payment options, to determine type of payment available for the specific bank to adapt you UI.
+        PaymentRequestOptions connectorPaymentOptions = null;
+
         List<String> accountsToRequestForBalance = null;
         List<String> accountsToRequestForTransaction = null;
         String singleAccountToRequest = null;
@@ -85,12 +106,14 @@ public class Sample {
                 .setSigningCertificateName("eidas_signing.pfx") // signing aka qseal certificate
                 .setSigningCertificatePassword("bankingsdk")
                 .setTlsCertificateName("eidas_tls.pfx") // tls aka qwac certificate
-                .setTlsCertificatePassword("bankingsdk");
+                .setTlsCertificatePassword("bankingsdk")
+                .setPemFileUrl("https://www.itlab.be/eidas_signing.pem")
+                .setAppApiKey("");
         /*
         BNP and it's settings
          */
         // int connectorId = 2;
-        // bank specific settings
+        // // bank specific settings
         // bankSettings
         //         .setAppClientId("d43ec737-e831-43a2-906b-5620d75e879d") //test3
         //         .setAppClientSecret("a498103dcd8471b63f901263703a295139d43a13555a3d373f0e8415d6401b1d0235468cf4db1e1d0b9680970fb688ac");
@@ -130,10 +153,14 @@ public class Sample {
             if (httpStatus < 200 || httpStatus > 299) {
                 throw new ApiCallException(String.format("Execution exception getting connector option. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
             }
-            // Yes, user context is a string. Its structure depends on the connector ! Just save and provide it
-            ConnectorOptionResponse connectorOptionResponse = getJsonDeserializer().readValue(httpRequest.getResponsePayloadAsString(), ConnectorOptionResponse.class);
-            connectorOption = RequestAccountsAccessOption.fromOrdinal(connectorOptionResponse.getOption());
-            System.out.printf("Connector %d, option %s%n", connectorId, connectorOption.toString());
+            // Get connector access options to allow the UI to adapt to the situation
+            // Hereafter we don't care of those options
+            content = httpRequest.getResponsePayloadAsString();
+            connectorAccountOptions = getJsonDeserializer().readValue(content, RequestAccountsOptions.class);
+            // Just sysout the options
+            System.out.printf("Connector %d, access options %s%n", connectorId, connectorAccountOptions.getAccessOption().toString());
+            System.out.printf("Connector %d, currency options %s%n", connectorId, connectorAccountOptions.getCurrencyOption().toString());
+            System.out.printf("Connector %d, linking options %s%n", connectorId, connectorAccountOptions.getLinkingOption().toString());
 
             /*
               USER REGISTRATION
@@ -190,21 +217,24 @@ public class Sample {
                 throw new ApiCallException(String.format("Execution exception requesting account access. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
             }
             content = httpRequest.getResponsePayloadAsString();
-            AccountAccessResponse accountAccessResponse = getJsonDeserializer().readValue(content, AccountAccessResponse.class);
-            // here you should save the flow context with the flow id defined above
+            FinalizeResponse accountAccessResponse = getJsonDeserializer().readValue(content, FinalizeResponse.class);
+            // here you should save the flow context with the flow id defined above to fetch it back later
             flow = accountAccessResponse.getFlowContext();
+            if (accountAccessResponse.getUserContext() != null) {
+                userContext = accountAccessResponse.getUserContext();
+            }
 
             /*
               SCA REDIRECTION
               This must be handled by your app
              */
-            System.out.println("We've got a SCA redirection URL : " + accountAccessResponse.getRedirectUrl());
+            System.out.println("We've got a SCA redirection URL : " + accountAccessResponse.getDataString());
             System.out.print("Open it ? [Y/n]");
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(System.in));
             String openUrl = reader.readLine();
             if (!openUrl.toUpperCase().equals("N")) {
-                openUrl(accountAccessResponse.getRedirectUrl());
+                openUrl(accountAccessResponse.getDataString());
             }
             System.out.println("");
             System.out.print("Paste the querystring where the bank redirects you:");
@@ -226,7 +256,8 @@ public class Sample {
                 throw new ApiCallException(String.format("Execution exception extracting flow id from query string. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
             }
             // get and save the user context which have certainly been modified
-            flowId = UUID.fromString(httpRequest.getResponsePayloadAsString());
+            content = httpRequest.getResponsePayloadAsString();
+            flowId = UUID.fromString(content);
             // With this flowid you should be able the retrieve the flow context string from your database
             // Here we use the flow we receive from previous call
             flow = accountAccessResponse.getFlowContext();
@@ -238,7 +269,7 @@ public class Sample {
                     .setTransaction(flowId.toString());
             FinalizeRequest accountAccessFinalizeRequest = new FinalizeRequest()
                     .setFlow(flow)
-                    .setQueryString(querystring)
+                    .setDataString(querystring)
                     .setUserContext(userContext)
                     .setBankSettings(bankSettings)
                     .setTppContext(tppContext);
@@ -246,7 +277,7 @@ public class Sample {
             httpRequest = new BankingHttpService();
             httpStatus = httpRequest
                     .setUri(dockerBase + "/Ais/access/finalize")
-                    .addHeader(HttpHeaders.ACCEPT, "text/plain") // MANDATORY, not application/json !!!
+                    // .addHeader(HttpHeaders.ACCEPT, "text/plain") // MANDATORY, not application/json !!!
                     .setPayload(payload)
                     .post()
                     .getRequestStatus();
@@ -256,8 +287,12 @@ public class Sample {
             if (httpStatus < 200 || httpStatus > 299) {
                 throw new ApiCallException(String.format("Execution exception finalizing account access. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
             }
+            content = httpRequest.getResponsePayloadAsString();
+            accountAccessResponse = getJsonDeserializer().readValue(content, FinalizeResponse.class);
             // get and save the user context which have certainly been modified
-            userContext = httpRequest.getResponsePayloadAsString();
+            if (accountAccessResponse.getUserContext() != null) {
+                userContext = accountAccessResponse.getUserContext();
+            }
 
             /*
               Getting Accounts
@@ -401,8 +436,33 @@ public class Sample {
             Payment Initiation Request
             In sandbox mode, don't expect the transaction to correspond to the data you gave, bank's sandbox often
             request the payment data to be fixed data... :'(
-            Each PI requires a SCA by the PSU even if you have a consent for AIS.
+            Each PIR requires a SCA by the PSU even if you have a consent for AIS.
              */
+
+            httpRequest = new BankingHttpService();
+            httpStatus = httpRequest
+                    .setUri(dockerBase + "/Pis/payment/options/" + connectorId)
+                    .get()
+                    .getRequestStatus();
+            if (httpStatus == 401 || httpStatus == 403) {
+                throw new IdentificationException(String.format("Security exception getting connector option. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+            }
+            if (httpStatus < 200 || httpStatus > 299) {
+                throw new ApiCallException(String.format("Execution exception getting connector option. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+            }
+            // Get connector access options to allow the UI to adapt to the situation
+            // Hereafter we don't care of those options
+            // There is certainly a better way to deserialize the response to Enum fields :P
+            PaymentOptionsResponse paymentOptionsResponse = getJsonDeserializer().readValue(httpRequest.getResponsePayloadAsString(), PaymentOptionsResponse.class);
+            connectorPaymentOptions = new PaymentRequestOptions(
+                    PaymentRequestDebtorIbanOption.fromOrdinal(paymentOptionsResponse.getDebtorIban()),
+                    paymentOptionsResponse.getSepaCreditTransfers(),
+                    paymentOptionsResponse.getInstantSepaCreditTransfers(),
+                    paymentOptionsResponse.getCrossborderPayments(),
+                    paymentOptionsResponse.getTarget2Payment()
+            );
+            System.out.println(getJsonSerializer().writeValueAsString(connectorPaymentOptions));
+
             if (accountsList.getAccounts().size() > 0) {
                 BankAccount debtorAccount = accountsList.getAccounts().get(0);
                 System.out.println("Initiating payment");
@@ -447,7 +507,7 @@ public class Sample {
                 }
                 // update the userContext which could have been modified
                 content = httpRequest.getResponsePayloadAsString();
-                PaymentInitiationResponse paymentInitiationResponse = getJsonDeserializer().readValue(content, PaymentInitiationResponse.class);
+                FinalizeResponse paymentInitiationResponse = getJsonDeserializer().readValue(content, FinalizeResponse.class);
                 if (paymentInitiationResponse.getUserContext() != null) {
                     // not null means has changed, so you should save it for later reuse
                     userContext = paymentInitiationResponse.getUserContext();
@@ -455,19 +515,21 @@ public class Sample {
                 // here you should save the flow context with the flowid defined above
                 flow = paymentInitiationResponse.getFlowContext();
 
-                System.out.println("Payment Initiation requested !");
+                System.out.println("Payment Initiation requested ! Flow Id=" + flowId);
+                System.out.println("If the bank's sandbox doesn't allow SCA, try to copy/paste a self generated query string:");
+                System.out.println("?state=" + flowId);
 
                 /*
                   SCA REDIRECTION
                   This must be handled by your app
                  */
-                System.out.println("We've got a SCA redirection URL : " + paymentInitiationResponse.getRedirectUrl());
+                System.out.println("We've got a SCA redirection URL : " + paymentInitiationResponse.getDataString());
                 System.out.print("Open it ? [Y/n]");
                 reader =
                         new BufferedReader(new InputStreamReader(System.in));
                 openUrl = reader.readLine();
                 if (!openUrl.toUpperCase().equals("N")) {
-                    openUrl(accountAccessResponse.getRedirectUrl());
+                    openUrl(paymentInitiationResponse.getDataString());
                 }
                 System.out.println("");
                 System.out.print("Paste the querystring where the bank redirects you:");
@@ -500,7 +562,7 @@ public class Sample {
                 System.out.println("Finalizing the payment");
                 FinalizeRequest paymentFinalyseRequest = new FinalizeRequest()
                         .setFlow(flow)
-                        .setQueryString(querystring)
+                        .setDataString(querystring)
                         .setUserContext(userContext)
                         .setBankSettings(bankSettings)
                         .setTppContext(tppContext);
@@ -517,6 +579,8 @@ public class Sample {
                     throw new ApiCallException(String.format("Execution exception finalizing payment. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
                 }
                 content = httpRequest.getResponsePayloadAsString();
+                PaymentFinalizeResponse paymentFinalizeResponse = getJsonDeserializer().readValue(content, PaymentFinalizeResponse.class);
+                System.out.println(getJsonSerializer().writeValueAsString(paymentFinalizeResponse));
             }
 
             /*
@@ -567,6 +631,7 @@ public class Sample {
 
     private static ObjectMapper getJsonDeserializer() {
         return new ObjectMapper()
+                .configure(DeserializationFeature.READ_ENUMS_USING_TO_STRING, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
     }

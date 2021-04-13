@@ -8,6 +8,8 @@ public class BankSettingsRequest {
     private String tlsCertificatePassword;
     private String signingCertificateName;
     private String signingCertificatePassword;
+    private String pemFileUrl;
+    private String appApiKey;
 
     public String getNcaId() {
         return ncaId;
@@ -69,6 +71,24 @@ public class BankSettingsRequest {
 
     public BankSettingsRequest setSigningCertificatePassword(String signingCertificatePassword) {
         this.signingCertificatePassword = signingCertificatePassword;
+        return this;
+    }
+
+    public String getPemFileUrl() {
+        return pemFileUrl;
+    }
+
+    public BankSettingsRequest setPemFileUrl(String pemFileUrl) {
+        this.pemFileUrl = pemFileUrl;
+        return this;
+    }
+
+    public String getAppApiKey() {
+        return appApiKey;
+    }
+
+    public BankSettingsRequest setAppApiKey(String appApiKey) {
+        this.appApiKey = appApiKey;
         return this;
     }
 }
