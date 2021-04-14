@@ -39,7 +39,6 @@ public class Sample {
 
         System.out.println("Docker sample started");
         String dockerBase = "https://bankingsdk-docker-test.azurewebsites.net";
-        dockerBase = "https://localhost:5001";
 
         // user context is linked to your user and a bank, but holds several consent for several accounts. It must be stored
         // and pass through to the API as it is could be modified by the API. So you have to check in response if not
@@ -107,7 +106,7 @@ public class Sample {
                 .setSigningCertificatePassword("bankingsdk")
                 .setTlsCertificateName("eidas_tls.pfx") // tls aka qwac certificate
                 .setTlsCertificatePassword("bankingsdk")
-                .setPemFileUrl("https://www.itlab.be/eidas_signing.pem")
+                .setPemFileUrl("URL to your public signing PEM")
                 .setAppApiKey("");
         /*
         BNP and it's settings
