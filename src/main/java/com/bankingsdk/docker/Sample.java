@@ -8,10 +8,7 @@ import com.bankingsdk.docker.helper.BankingHttpService;
 import com.bankingsdk.docker.models.BankAccount;
 import com.bankingsdk.docker.models.PaymentRequestOptions;
 import com.bankingsdk.docker.models.RequestAccountsOptions;
-import com.bankingsdk.docker.models.enums.PaymentRequestDebtorIbanOption;
-import com.bankingsdk.docker.models.enums.RequestAccountsAccessOption;
-import com.bankingsdk.docker.models.enums.RequestAccountsCurrencyOption;
-import com.bankingsdk.docker.models.enums.RequestAccountsLinkingOption;
+import com.bankingsdk.docker.models.enums.*;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -69,10 +66,10 @@ public class Sample {
         // RequestAccountsOptions.linkingOption:
         // Some banks accept to have multiple consent for the same user, some don't. This later means that, to get consent
         // for more bank accounts of the same user, you will need to ask the consent for all already connected account plus new ones
-        RequestAccountsOptions connectorAccountOptions = null;
+        RequestAccountsOptions connectorAccountOptions;
 
         // PaymentRequestOptions: contains the payment options, to determine type of payment available for the specific bank to adapt you UI.
-        PaymentRequestOptions connectorPaymentOptions = null;
+        PaymentRequestOptions connectorPaymentOptions;
 
         List<String> accountsToRequestForBalance = null;
         List<String> accountsToRequestForTransaction = null;
@@ -133,7 +130,7 @@ public class Sample {
             // in SCA redirection that it will transmitted back when it redirects to you to allow you to restore the
             // flow
             UUID flowId = UUID.randomUUID();
-            // This variable will contain the flow (jsonified)
+            // This variable will contain the flow blackbox (jsonified)
             String flow;
             AccountsResponse accountsList;
 
@@ -224,18 +221,20 @@ public class Sample {
             }
 
             /*
+              In your app you should switch on the accountAccessResponse.getResultStatus() to see the next step.
+              We only take the case of redirection here to illustrate the handling of the flow context in an SCA done by the bank
+              This is the main case accountAccessResponse.getResultStatus() == ResultStatus.REDIRECT
               SCA REDIRECTION
-              This must be handled by your app
              */
             System.out.println("We've got a SCA redirection URL : " + accountAccessResponse.getDataString());
             System.out.print("Open it ? [Y/n]");
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(System.in));
             String openUrl = reader.readLine();
-            if (!openUrl.toUpperCase().equals("N")) {
+            if (!openUrl.equalsIgnoreCase("N")) {
                 openUrl(accountAccessResponse.getDataString());
             }
-            System.out.println("");
+            System.out.println();
             System.out.print("Paste the querystring where the bank redirects you:");
             reader = new BufferedReader(new InputStreamReader(System.in));
             String querystring = reader.readLine();
@@ -258,8 +257,7 @@ public class Sample {
             content = httpRequest.getResponsePayloadAsString();
             flowId = UUID.fromString(content);
             // With this flowid you should be able the retrieve the flow context string from your database
-            // Here we use the flow we receive from previous call
-            flow = accountAccessResponse.getFlowContext();
+            // Here we use the flow we receive from previous call above
 
             /*
               Finalizing the BankAccount Access Request
@@ -465,7 +463,7 @@ public class Sample {
             if (accountsList.getAccounts().size() > 0) {
                 BankAccount debtorAccount = accountsList.getAccounts().get(0);
                 System.out.println("Initiating payment");
-                tppContext.setFlow("payment:" + flowId.toString())
+                tppContext.setFlow("payment:" + flowId)
                         .setTransaction(debtorAccount.getId() + ":" + debtorAccount.getIban());
                 PaymentRequest paymentRequest = new PaymentRequest()
                         .setConnectorId(connectorId)
@@ -517,8 +515,10 @@ public class Sample {
                 System.out.println("Payment Initiation requested ! Flow Id=" + flowId);
                 System.out.println("If the bank's sandbox doesn't allow SCA, try to copy/paste a self generated query string:");
                 System.out.println("?state=" + flowId);
-
                 /*
+                  In your app you should switch on the accountAccessResponse.getResultStatus() to see the next step.
+                  We only take the case of redirection here to illustrate the handling of the flow context in an SCA done by the bank
+                  This is the main case accountAccessResponse.getResultStatus() == ResultStatus.REDIRECT
                   SCA REDIRECTION
                   This must be handled by your app
                  */
@@ -527,10 +527,10 @@ public class Sample {
                 reader =
                         new BufferedReader(new InputStreamReader(System.in));
                 openUrl = reader.readLine();
-                if (!openUrl.toUpperCase().equals("N")) {
+                if (!openUrl.equalsIgnoreCase("N")) {
                     openUrl(paymentInitiationResponse.getDataString());
                 }
-                System.out.println("");
+                System.out.println();
                 System.out.print("Paste the querystring where the bank redirects you:");
                 reader = new BufferedReader(new InputStreamReader(System.in));
                 querystring = reader.readLine();
@@ -553,7 +553,6 @@ public class Sample {
                 flowId = UUID.fromString(httpRequest.getResponsePayloadAsString());
                 // With this flowid you should be able the retrieve the flow context string from your database
                 // Here we use the flow we recieve from previous call
-                flow = paymentInitiationResponse.getFlowContext();
 
                 /*
                 Finalizing the payment
@@ -579,7 +578,36 @@ public class Sample {
                 }
                 content = httpRequest.getResponsePayloadAsString();
                 PaymentFinalizeResponse paymentFinalizeResponse = getJsonDeserializer().readValue(content, PaymentFinalizeResponse.class);
+                if (paymentFinalizeResponse.getUserContext() != null) {
+                    userContext = paymentFinalizeResponse.getUserContext();
+                }
                 System.out.println(getJsonSerializer().writeValueAsString(paymentFinalizeResponse));
+
+                /*
+                GET THE STATUS normally later on,
+                 */
+                System.out.println("Get the status of the payment");
+                PaymentStatusRequest paymentStatusRequest = new PaymentStatusRequest()
+                        .setConnectorId(connectorId)
+                        .setPaymentId(paymentFinalizeResponse.getPaymentStatus().getPaymentId())
+                        .setUserContext(userContext)
+                        .setBankSettings(bankSettings)
+                        .setTppContext(tppContext);
+                payload = getJsonSerializer().writeValueAsString(paymentStatusRequest);
+                httpStatus = httpRequest
+                        .setUri(dockerBase + "/Pis/payment/status")
+                        .setPayload(payload)
+                        .post()
+                        .getRequestStatus();
+                if (httpStatus == 401 || httpStatus == 403) {
+                    throw new IdentificationException(String.format("Security exception finalizing payment. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                if (httpStatus < 200 || httpStatus > 299) {
+                    throw new ApiCallException(String.format("Execution exception finalizing payment. HTTP status=%d, Server response=%s", httpRequest.getRequestStatus(), httpRequest.getResponsePayloadAsString()));
+                }
+                content = httpRequest.getResponsePayloadAsString();
+                PaymentStatusResponse paymentStatusResponse = getJsonDeserializer().readValue(content, PaymentStatusResponse.class);
+                System.out.println(getJsonSerializer().writeValueAsString(paymentStatusResponse));
             }
 
             /*
@@ -589,7 +617,7 @@ public class Sample {
                 System.out.println("User context before account deletion : " + userContext);
                 // Let's remove the first one
                 BankAccount accountToDelete = accountsList.getAccounts().get(0);
-                tppContext.setFlow("Delete:" + flowId.toString())
+                tppContext.setFlow("Delete:" + flowId)
                         .setTransaction(accountToDelete.getId() + ":" + accountToDelete.getIban());
                 DeleteAccountRequest deleteAccountRequest = new DeleteAccountRequest()
                         .setId(accountToDelete.getId())

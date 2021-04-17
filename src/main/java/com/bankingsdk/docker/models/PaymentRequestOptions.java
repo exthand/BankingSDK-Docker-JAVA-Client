@@ -3,60 +3,60 @@ package com.bankingsdk.docker.models;
 import com.bankingsdk.docker.models.enums.PaymentRequestDebtorIbanOption;
 
 public class PaymentRequestOptions {
-    private PaymentRequestDebtorIbanOption DebtorIban;
-    private TransferOptions SepaCreditTransfers = new TransferOptions();
-    private TransferOptions InstantSepaCreditTransfers = new TransferOptions();
-    private TransferOptions CrossborderPayments = new TransferOptions();
-    private TransferOptions Target2Payment = new TransferOptions();
+    private PaymentRequestDebtorIbanOption debtorIban;
+    private TransferOptions sepaCreditTransfers = new TransferOptions();
+    private TransferOptions instantSepaCreditTransfers = new TransferOptions();
+    private TransferOptions crossborderPayments = new TransferOptions();
+    private TransferOptions target2Payment = new TransferOptions();
 
     public PaymentRequestDebtorIbanOption getDebtorIban() {
-        return DebtorIban;
+        return debtorIban;
     }
 
     public void setDebtorIban(PaymentRequestDebtorIbanOption debtorIban) {
-        DebtorIban = debtorIban;
+        this.debtorIban = debtorIban;
     }
 
     public TransferOptions getSepaCreditTransfers() {
-        return SepaCreditTransfers;
+        return sepaCreditTransfers;
     }
 
     public void setSepaCreditTransfers(TransferOptions sepaCreditTransfers) {
-        SepaCreditTransfers = sepaCreditTransfers;
+        this.sepaCreditTransfers = sepaCreditTransfers;
     }
 
     public TransferOptions getInstantSepaCreditTransfers() {
-        return InstantSepaCreditTransfers;
+        return instantSepaCreditTransfers;
     }
 
     public void setInstantSepaCreditTransfers(TransferOptions instantSepaCreditTransfers) {
-        InstantSepaCreditTransfers = instantSepaCreditTransfers;
+        this.instantSepaCreditTransfers = instantSepaCreditTransfers;
     }
 
     public TransferOptions getCrossborderPayments() {
-        return CrossborderPayments;
+        return crossborderPayments;
     }
 
     public void setCrossborderPayments(TransferOptions crossborderPayments) {
-        CrossborderPayments = crossborderPayments;
+        this.crossborderPayments = crossborderPayments;
     }
 
     public TransferOptions getTarget2Payment() {
-        return Target2Payment;
+        return target2Payment;
     }
 
     public void setTarget2Payment(TransferOptions target2Payment) {
-        Target2Payment = target2Payment;
+        this.target2Payment = target2Payment;
     }
 
     public PaymentRequestOptions() {
     }
 
     public PaymentRequestOptions(PaymentRequestDebtorIbanOption debtorIban, TransferOptions sepaCreditTransfers, TransferOptions instantSepaCreditTransfers, TransferOptions crossborderPayments, TransferOptions target2Payment) {
-        DebtorIban = debtorIban;
-        SepaCreditTransfers = sepaCreditTransfers;
-        InstantSepaCreditTransfers = instantSepaCreditTransfers;
-        CrossborderPayments = crossborderPayments;
-        Target2Payment = target2Payment;
+        this.debtorIban = debtorIban;
+        this.sepaCreditTransfers = sepaCreditTransfers;
+        this.instantSepaCreditTransfers = instantSepaCreditTransfers;
+        this.crossborderPayments = crossborderPayments;
+        this.target2Payment = target2Payment;
     }
 }

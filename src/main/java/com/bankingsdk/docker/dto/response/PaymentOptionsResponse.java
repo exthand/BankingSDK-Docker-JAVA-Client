@@ -1,14 +1,13 @@
 package com.bankingsdk.docker.dto.response;
 
 import com.bankingsdk.docker.models.TransferOptions;
-import com.bankingsdk.docker.models.enums.PaymentRequestDebtorIbanOption;
 
 public class PaymentOptionsResponse {
     private int DebtorIban;
-    private TransferOptions SepaCreditTransfers = new TransferOptions();
-    private TransferOptions InstantSepaCreditTransfers = new TransferOptions();
-    private TransferOptions CrossborderPayments = new TransferOptions();
-    private TransferOptions Target2Payment = new TransferOptions();
+    private TransferOptions sepaCreditTransfers = new TransferOptions();
+    private TransferOptions instantSepaCreditTransfers = new TransferOptions();
+    private TransferOptions crossborderPayments = new TransferOptions();
+    private TransferOptions target2Payment = new TransferOptions();
 
     public int getDebtorIban() {
         return DebtorIban;
@@ -19,34 +18,34 @@ public class PaymentOptionsResponse {
     }
 
     public TransferOptions getSepaCreditTransfers() {
-        return SepaCreditTransfers;
+        return sepaCreditTransfers;
     }
 
     public void setSepaCreditTransfers(TransferOptions sepaCreditTransfers) {
-        SepaCreditTransfers = sepaCreditTransfers;
+        this.sepaCreditTransfers = sepaCreditTransfers;
     }
 
     public TransferOptions getInstantSepaCreditTransfers() {
-        return InstantSepaCreditTransfers;
+        return instantSepaCreditTransfers;
     }
 
     public void setInstantSepaCreditTransfers(TransferOptions instantSepaCreditTransfers) {
-        InstantSepaCreditTransfers = instantSepaCreditTransfers;
+        this.instantSepaCreditTransfers = instantSepaCreditTransfers;
     }
 
     public TransferOptions getCrossborderPayments() {
-        return CrossborderPayments;
+        return crossborderPayments;
     }
 
     public void setCrossborderPayments(TransferOptions crossborderPayments) {
-        CrossborderPayments = crossborderPayments;
+        this.crossborderPayments = crossborderPayments;
     }
 
     public TransferOptions getTarget2Payment() {
-        return Target2Payment;
+        return target2Payment;
     }
 
     public void setTarget2Payment(TransferOptions target2Payment) {
-        Target2Payment = target2Payment;
+        this.target2Payment = target2Payment;
     }
 }

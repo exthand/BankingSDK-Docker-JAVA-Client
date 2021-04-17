@@ -1,22 +1,22 @@
 package com.bankingsdk.docker.models;
 
 public class SupportOptions {
-    private boolean Supported;
-    private boolean CancelSupported;
+    private boolean supported;
+    private boolean cancelSupported;
 
     public boolean isSupported() {
-        return Supported;
+        return supported;
     }
 
     public void setSupported(boolean supported) {
-        Supported = supported;
+        this.supported = supported;
     }
 
     public boolean isCancelSupported() {
-        return CancelSupported;
+        return cancelSupported;
     }
 
     public void setCancelSupported(boolean cancelSupported) {
-        CancelSupported = cancelSupported;
+        this.cancelSupported = cancelSupported;
     }
 }

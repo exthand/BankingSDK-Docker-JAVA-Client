@@ -1,31 +1,31 @@
 package com.bankingsdk.docker.models;
 
 public class TransferOptions {
-    private SupportOptions SinglePayments = new SupportOptions();
-    private SupportOptions PeriodicPayments = new SupportOptions();
-    private SupportOptions BulkPayments = new SupportOptions();
+    private SupportOptions singlePayments = new SupportOptions();
+    private SupportOptions periodicPayments = new SupportOptions();
+    private SupportOptions bulkPayments = new SupportOptions();
 
     public SupportOptions getSinglePayments() {
-        return SinglePayments;
+        return singlePayments;
     }
 
     public void setSinglePayments(SupportOptions singlePayments) {
-        SinglePayments = singlePayments;
+        this.singlePayments = singlePayments;
     }
 
     public SupportOptions getPeriodicPayments() {
-        return PeriodicPayments;
+        return periodicPayments;
     }
 
     public void setPeriodicPayments(SupportOptions periodicPayments) {
-        PeriodicPayments = periodicPayments;
+        this.periodicPayments = periodicPayments;
     }
 
     public SupportOptions getBulkPayments() {
-        return BulkPayments;
+        return bulkPayments;
     }
 
     public void setBulkPayments(SupportOptions bulkPayments) {
-        BulkPayments = bulkPayments;
+        this.bulkPayments = bulkPayments;
     }
 }

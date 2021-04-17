@@ -3,58 +3,78 @@ package com.bankingsdk.docker.models;
 import com.bankingsdk.docker.models.enums.PaymentStatusISO20022;
 
 public class PaymentStatus {
-    private BankAccount Debtor;
-    private String CreditorName;
-    private BankAccount Creditor;
-    private BankAccountInstructedAmount Amount;
-    private PaymentStatusISO20022 Status;
-    private String EndToEndIdentification;
+    private String paymentId;
+    private BankAccount debtor;
+    private String creditorName;
+    private BankAccount creditor;
+    private BankAccountInstructedAmount amount;
+    private PaymentStatusISO20022 status;
+    private String statusCodeRaw;
+    private String endToEndIdentification;
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public PaymentStatus setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+        return this;
+    }
 
     public BankAccount getDebtor() {
-        return Debtor;
+        return debtor;
     }
 
     public void setDebtor(BankAccount debtor) {
-        Debtor = debtor;
+        this.debtor = debtor;
     }
 
     public String getCreditorName() {
-        return CreditorName;
+        return creditorName;
     }
 
     public void setCreditorName(String creditorName) {
-        CreditorName = creditorName;
+        this.creditorName = creditorName;
     }
 
     public BankAccount getCreditor() {
-        return Creditor;
+        return creditor;
     }
 
     public void setCreditor(BankAccount creditor) {
-        Creditor = creditor;
+        this.creditor = creditor;
     }
 
     public BankAccountInstructedAmount getAmount() {
-        return Amount;
+        return amount;
     }
 
     public void setAmount(BankAccountInstructedAmount amount) {
-        Amount = amount;
+        this.amount = amount;
     }
 
     public PaymentStatusISO20022 getStatus() {
-        return Status;
+        return status;
     }
 
     public void setStatus(PaymentStatusISO20022 status) {
-        Status = status;
+        this.status = status;
+    }
+
+    public String getStatusCodeRaw() {
+        return statusCodeRaw;
+    }
+
+    public PaymentStatus setStatusCodeRaw(String statusCodeRaw) {
+        this.statusCodeRaw = statusCodeRaw;
+        return this;
     }
 
     public String getEndToEndIdentification() {
-        return EndToEndIdentification;
+        return endToEndIdentification;
     }
 
     public void setEndToEndIdentification(String endToEndIdentification) {
-        EndToEndIdentification = endToEndIdentification;
+        this.endToEndIdentification = endToEndIdentification;
     }
 }

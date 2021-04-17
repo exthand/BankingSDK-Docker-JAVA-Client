@@ -12,10 +12,6 @@ public enum PaymentStatusISO20022 {
     /// </summary>
     ACCP,
     /// <summary>
-    /// AcceptedFundsChecked
-    /// </summary>
-    ACFC,
-    /// <summary>
     /// AcceptedSettlementCompleted
     /// </summary>
     ACSC,
@@ -36,21 +32,9 @@ public enum PaymentStatusISO20022 {
     /// </summary>
     ACWP,
     /// <summary>
-    /// Cancelled
-    /// </summary>
-    CANC,
-    /// <summary>
-    /// PartiallyAcceptedTechnicalCorrect
-    /// </summary>
-    PATC,
-    /// <summary>
     /// Pending
     /// </summary>
     PDNG,
-    /// <summary>
-    /// Presented
-    /// </summary>
-    PRES,
     /// <summary>
     /// Received
     /// </summary>
@@ -62,7 +46,27 @@ public enum PaymentStatusISO20022 {
     /// <summary>
     /// Unknown
     /// </summary>
-    UNKN;
+    UNKN,
+    /// <summary>
+    /// AcceptedFundsChecked
+    /// </summary>
+    ACFC,
+    /// <summary>
+    /// Cancelled
+    /// </summary>
+    CANC,
+    /// <summary>
+    /// PartiallyAcceptedTechnicalCorrect
+    /// </summary>
+    PATC,
+    /// <summary>
+    /// Presented
+    /// </summary>
+    PRES,
+    /// <summary>
+    /// Blocked
+    /// </summary>
+    BLCK;
 
     public static PaymentStatusISO20022 fromOrdinal(int n) {
         if ((n < 0) || (n > (values().length-1))) {
